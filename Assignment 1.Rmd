@@ -1,0 +1,11 @@
+---
+title: "Apple Dataset"
+author: "Pjeanjud"
+date: "2026-09-09"
+output: html_document
+---
+```{r}
+library(readx1)
+Apple_dataset_2007_2025 <- read_excel("Apple_dataset_2007_2025.xlsx")
+summary(Apple_dataset_2007_2025_[, c("iPhone_ASP_USD","iPhone_Revenue_Billions","Total_Revenue_Billions","Average_Stock_Price_USD_Annual")])
+```
