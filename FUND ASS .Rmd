@@ -1,0 +1,302 @@
+---
+title: "FUND ASS "
+output: html_document
+---
+
+```{r}
+library(readr)
+library(caret)
+```
+```{r}
+Universalbank_original <- read.csv("UniversalBank.csv")
+Universalbank <- Universalbank_original
+head(Universalbank)
+```
+
+
+```{r}
+library(caret)
+
+Universalbank <- Universalbank[, !(names(Universalbank) %in% c("ID", "ZIP.Code"))]
+names(Universalbank)
+```
+
+```{R}
+Universalbank$Education <- factor(Universalbank$Education)
+```
+
+```{r}
+dummies <- dummyVars(~ Education, data = Universalbank)
+education_dummies <- predict(dummies, newdata = Universalbank)
+Universalbank <- cbind(
+  Universalbank, education_dummies)
+```
+
+
+```{r}
+names(Universalbank)
+```
+
+```{r}
+Universalbank$Education <- NULL
+names(Universalbank)
+```
+
+
+```{r}
+set.seed(1)
+
+trainIndex <- sample(1:nrow(Universalbank), 0.60 * nrow(Universalbank))
+
+X_train <- Universalbank[trainIndex, ]
+X_validation <- Universalbank[-trainIndex, ]
+```
+
+```{r}
+nrow(X_train)
+nrow(X_validation)
+```
+
+
+
+```{r}
+Y_train <- X_train$Personal.Loan
+Y_validation <- X_validation$Personal.Loan
+
+X_train$Personal.Loan <- NULL
+X_validation$Personal.Loan <- NULL
+
+names(X_train)
+```
+
+```{r}
+library(caret)
+
+preprocess <- preProcess(X_train, method = c("center", "scale"))
+
+X_train <- predict(preprocess, X_train)
+X_validation <- predict(preprocess, X_validation)
+
+head(X_train)
+```
+
+
+```{r}
+library(class)
+Universalbank_original <- read.csv("UniversalBank.csv")
+Y_train <- Universalbank_original$Personal.Loan[trainIndex]
+Y_validation <- Universalbank_original$Personal.Loan[-trainIndex]
+
+Y_train <- factor(Y_train, levels = c(0, 1))
+Y_validation <- factor(Y_validation, levels = c(0, 1))
+
+length(Y_train)
+length(Y_validation)
+
+```
+
+
+
+
+```{r}
+preprocess <- preProcess(X_train, method = c("center", "scale"))
+
+X_train <- predict(preprocess, X_train)
+X_validation <- predict(preprocess, X_validation)
+```
+
+
+```{r}
+knn_pred <- knn(
+  train = X_train,
+             test = X_validation,
+             cl = Y_train,
+             k = 1, prob = TRUE
+  )
+
+table(knn_pred)
+```
+
+```{r}
+accuracy <- mean(knn_pred == Y_validation)
+accuracy
+```
+
+
+```{r}
+customer <- data.frame(
+  Age = 40,
+  Experience = 10,
+  Income = 84,
+  Family = 2,
+  CCAvg = 2,
+  Mortgage = 0,
+  Securities.Account = 0,
+  CD.Account = 0,
+  Online = 1,
+  CreditCard = 1,
+  Education.1 = 0,
+  Education.2 = 1,
+  Education.3 = 0
+)
+
+customer_x <- customer[, names(X_train)]
+customer_x <- predict(preprocess, customer_x)
+```
+
+```{r}
+customer_pred <- knn(
+  train = X_train,
+             test = customer_x,
+             cl = Y_train,
+             k = 1, prob = TRUE
+  )
+
+customer_pred
+
+```
+looking at this, by using K=1  and a cutoff of 0.5 we can see that the classification is 0 which means the loan was not accepted
+
+```{r}
+accuracy <- numeric(20)
+
+for (k in 1:20) {
+knn_pred <- knn(
+  train = X_train,
+             test = X_validation,
+             cl = Y_train,
+             k = k,
+)
+
+accuracy[k] <- mean(knn_pred == Y_validation)
+}
+
+which.max(accuracy)
+max(accuracy)
+
+```
+using k=3  the accuracy is 96.4%
+
+```{r}
+knn_pred <- knn(
+  train = X_train,
+             test = X_validation,
+             cl = Y_train,
+             k = 3,
+)
+
+table(knn_pred, Y_validation)
+```
+
+using k=3 this is the confusion matrix for the validation data, showing that 1786 customers did not accept the loan and 142 accepted it. it also falsely classified 63 customers who did not accepted the loan when in reality they did and 9 customers who accepted the loan when they did not.
+
+
+```{r}
+customer_pred <- knn(
+  train = X_train,
+             test = customer_x,
+             cl = Y_train,
+             k = 3, prob = TRUE
+)
+
+customer_pred
+```
+
+by using the best k, the customer will not accept the loan due to a classification of 0
+
+```{r}
+set.seed(1)
+
+trainIndex <- sample(
+  1:nrow(Universalbank),
+  0.50 * nrow(Universalbank)
+)
+
+remainingIndex <- setdiff( 
+  1:nrow(Universalbank),
+  trainIndex
+  )
+
+validationIndex <- sample(
+  remainingIndex,
+  0.30 * nrow(Universalbank)
+)
+
+testIndex <- setdiff(
+  remainingIndex,
+  validationIndex
+)
+
+length(trainIndex)
+length(validationIndex)
+length(testIndex)
+```
+
+```{r}
+X_train_50 <- Universalbank[trainIndex, ]
+X_validation_30 <- Universalbank[validationIndex, ]
+X_test_20 <- Universalbank[testIndex, ]
+
+X_train_50 <- X_train_50[, names(X_train_50) != "Personal.Loan"]
+X_validation_30 <- X_validation_30[, names(X_validation_30) != "Personal.Loan"]
+X_test_20 <- X_test_20[, names(X_test_20) != "Personal.Loan"]
+
+nrow(X_train_50)
+nrow(X_validation_30)
+nrow(X_test_20)
+```
+
+```{r}
+Y_train_50 <- Universalbank_original$Personal.Loan[trainIndex]
+Y_validation_30 <- Universalbank_original$Personal.Loan[validationIndex]
+Y_test_20 <- Universalbank_original$Personal.Loan[testIndex]
+
+Y_train_50 <- factor(Y_train_50, levels = c(0, 1))
+Y_validation_30 <- factor(Y_validation_30, levels = c(0, 1))
+Y_test_20 <- factor(Y_test_20, levels = c(0, 1))
+
+
+length(Y_train_50)
+length(Y_validation_30)
+length(Y_test_20)
+
+```
+
+
+```{r}
+preprocess_50 <- preProcess(X_train_50, method = c("center", "scale"))
+X_train_50 <- predict(preprocess_50, X_train_50)
+X_validation_30 <- predict(preprocess_50, X_validation_30)
+X_test_20 <- predict(preprocess_50, X_test_20)
+
+```
+
+```{r}
+knn_train <- knn(
+  train = X_train_50,
+             test = X_train_50,
+             cl = Y_train_50,
+             k = 3
+)
+table(knn_train, Y_train_50)
+
+knn_validation <- knn(
+  train = X_train_50,
+             test = X_validation_30,
+             cl = Y_train_50,
+             k = 3
+)
+table(knn_validation, Y_validation_30)
+
+knn_test <- knn(
+  train = X_train_50,
+             test = X_test_20,
+             cl = Y_train_50,
+             k = 3
+)
+table(knn_test, Y_test_20)
+
+
+```
+
+using k=3 gave an accuracy of 97.64 for training, and testing was 96.80 and validation was 96.10. that shows that the model perform well on new data and does not appear to be overfitting
