@@ -1,0 +1,107 @@
+---
+title: "ASSIGN_3"
+author: "Pjeanjud"
+date: "2026-10-09"
+output: html_document
+---
+
+```{r}
+UniversalBank <- read.csv("UniversalBank.csv")
+
+
+set.seed(123)
+
+trainIndex <- sample(
+  1:nrow(UniversalBank),
+  0.60 * nrow(UniversalBank)
+)
+
+training <- UniversalBank[trainIndex, ]
+validation <- UniversalBank[-trainIndex, ]
+
+nrow(training)
+nrow(validation)
+
+names(UniversalBank)
+```
+
+a
+```{r}
+pivot_table <- table(training$CreditCard,
+                     training$Online,
+                     training$Personal.Loan)
+
+pivot_table
+```
+
+b
+```{r}
+sum(training$CreditCard == 1 &
+      training$Online == 1 &
+      training$Personal.Loan == 1) /
+  sum(training$CreditCard == 1 &
+        training$Online == 1)
+```
+
+c
+```{r}
+table(training$Online, training$Personal.Loan)
+table(training$CreditCard, training$Personal.Loan)
+```
+
+d
+```{r}
+#i.
+mean(training$CreditCard[training$Personal.Loan == 1] == 1)
+
+#ii.
+mean(training$Online[training$Personal.Loan == 1] == 1)
+
+#iii.
+mean(training$Personal.Loan == 1)
+
+#iv.
+mean(training$CreditCard[training$Personal.Loan == 0] == 1)
+
+#v.
+mean(training$Online[training$Personal.Loan == 0] == 1)
+
+#vi.
+mean(training$Personal.Loan == 0)
+```
+
+e
+```{r}
+p1 <- (0.3273381 * 0.6438849 * 0.09266667)
+p0 <- (0.2909625 * 0.5951506 * 0.9073333)
+p1 / (p1 + p0)
+```
+
+f
+I WOULD SAY THAT PART B(0.1071429) GIVES THE MOST CORRECT ANSWER BECAUSE THE PIVOT TABLE USE BOTH CREDIT CARD AND ONLINE BANKING TOGETHER TO GIVE THE ESTIMATE, WHEREAS NAIVE BAYES(0.1105637) GIVES A HIGHER ESTIMATE BECAUSE IT ASSUMES THAT  CREDIT CARD AND ONLINE BANKING ARE EACH INDEPENDENT.
+
+g
+
+
+```{r}
+library(e1071)
+
+training$CreditCard <- factor(training$CreditCard)
+training$Online <- factor(training$Online)
+training$Personal.Loan <- factor(training$Personal.Loan)
+
+nb_model <- naiveBayes(
+  Personal.Loan ~ CreditCard + Online,
+  data = training
+
+)
+
+
+predict(nb_model,
+        newdata = data.frame(
+          CreditCard = factor(1, levels = c(0, 1)),
+          Online = factor(1, levels = c(0, 1))
+        ),
+        type = "raw")
+```
+THE NAIVE BAYES GIVE A PROBABILITY OF 0.1105637 THAT A CUSTOMER WITH A CREDIT CARD WHO USES ONLINE BANKING WILL ACCEPT THE LOAN. SAME AS PART e
