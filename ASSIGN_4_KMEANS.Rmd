@@ -1,0 +1,69 @@
+---
+title: "ASSIGNMENT_4."
+author: "Pjeanjud"
+date: "2026-10-24"
+output: html_document
+---
+
+```{r}
+pharma <- read.csv("Pharmaceuticals.csv")
+names(pharma)
+head(pharma)
+
+```
+
+```{r}
+# variables 1-9
+
+pharma_num <- pharma[, 3:11]
+head(pharma_num)
+```
+
+```{r}
+# Normalize
+pharma_scaled <- scale(pharma_num)
+head(pharma_scaled)
+```
+
+```{r}
+library(factoextra)
+fviz_nbclust(pharma_scaled, kmeans, method = "wss")
+```
+
+```{r}
+set.seed(123)
+pharma_k3 <- kmeans(pharma_scaled, centers = 3, nstart =25)
+pharma_k3$centers
+pharma_k3$size
+pharma_k3$cluster
+```
+USED K MEANS TO GROUP THE 21 FIRMS BASED ON THE 9 VARIABLES... USED SCALE() BECAUSE OF SCALE DIFFERENCES BETWEEN VARIABLES AND USED ELBOW METHOD TO SELECT THE 3 CLUSTERS AND ALSO USE THE NSTART=25 LIKE I SAW IN THE CLASS SLIDES. 
+
+```{r}
+pharma$Cluster <- pharma_k3$cluster
+pharma[, c("Symbol", "Name", "Cluster")]
+```
+
+```{r}
+View(pharma[, c("Symbol", "Name", "Cluster")])
+```
+cluster 1 has 4 firms it has firms that are below average market capitalization, ROE, ROA and NET PROFIT MARGIN. and they have above average P/E RATIO, BETA and ASSET TURNOVER... this cluster is the weaker one.
+
+cluster 2 has 11 firms and is the bigger cluster... all the firms have above average market capitalization, ROE, ROA, and NET PROFIT MARGIN and have below average BETA, P/E RATIO. LEVERAGE and REVENUE GROWTH. this is a cluster has more profit and less risk
+
+cluster 3 has 6 firms and they have below average marget capitalization, ROE, ROA, ASSET TURNOVER and NET PROFIT MARGIN. they have above average BETA, LEVERAGE, and REVENUE GROWTH. this group has smaller profit and high risk and good revenue growth.
+
+```{r}
+View(pharma[, c("Name", "Cluster",
+                "Median_Recommendation",
+                "Location", "Exchange")])
+```
+c
+
+The clusters have some patterns i would say... cluster 2 contains many firms with HOLD M.recommendation but others have mixed M.recommendations. US firms shows in all 3 clusters as well as firms from other countries. a lot of the firms are listed on the NYSE, while NASDAQ and AMEX only show 1 time.
+
+d
+
+CLUSTER 1- SMALLER FIRM(LESS-PROFITABLE)
+CLUSTER 2- BIGGER FIRM(MORE-PROFITABLE)
+CLUSTER 3- REVENUE GROWTH FIRM(HIGH FINANCIAL RISK)
