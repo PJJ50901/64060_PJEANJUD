@@ -1,0 +1,159 @@
+---
+title: "ASSIGNMENT-5 FML"
+author: "Pjeanjud"
+date: "2026-11-04"
+output: html_document
+---
+
+
+```{r}
+cereals <- read.csv("Cereals.csv")
+dim(cereals)
+summary(cereals)
+```
+
+```{r}
+cereals_clean <- na.omit(cereals)
+dim(cereals_clean)
+```
+
+```{r}
+cereal_numeric <- cereals_clean[
+   , sapply(cereals_clean, is.numeric)
+]
+
+cereals_scaled <- scale(cereal_numeric)
+head(cereals_scaled)
+```
+
+```{r}
+# Euclidean Distance
+d <- dist(cereals_scaled, method = "euclidean")
+```
+
+```{r}
+library(cluster)
+
+hc_single <- agnes(d, method ="single")
+hc_complete <- agnes(d, method ="complete")
+hc_average <- agnes(d, method ="average")
+hc_ward <- agnes(d, method ="ward")
+
+```
+
+```{r}
+hc_single$ac
+hc_complete$ac
+hc_average$ac
+hc_ward$ac
+```
+so Ward is the best method that should be used.
+
+```{r}
+pltree(hc_single, main = "Single Linkage")
+pltree(hc_complete, main = "Complete Linkage")
+pltree(hc_average, main = "Average Linkage")
+pltree(hc_ward, main = "Ward's Method")
+```
+I would choose the ward method because it has the highest coefficient 0.9046042
+
+```{r}
+clusters <- cutree(hc_ward, k= 3)
+table(clusters)
+```
+
+```{r}
+pltree(hc_ward, main = "Ward's Method - 3 Clusters")
+rect.hclust(hc_ward, k = 3, border = 2:4)
+```
+
+```{r}
+set.seed(123)
+n <- nrow(cereals_scaled)
+index_A <- sample(1:n, size = floor(n/2))
+
+A <- cereals_scaled[index_A, ]
+B <- cereals_scaled[-index_A, ]
+
+nrow(A)
+nrow(B)
+```
+
+```{r}
+d_A <- dist(A, method = "euclidean")
+
+hc_A <- agnes(d_A, method = "ward")
+
+clusters_A <- cutree(as.hclust(hc_A), k =3)
+
+table(clusters_A)
+```
+
+```{r}
+centroids <- aggregate(A,
+                       by = list(cluster = clusters_A),
+                       FUN = mean)
+
+centroids
+```
+
+
+```{r}
+centroids_values <- as.matrix(centroids[, -1])
+
+predicted_B <- rep(NA, nrow(B))
+for (i in 1:nrow(B)) {
+distances <- apply(centroids_values, 1, function(center) {
+  sqrt(sum((B[i, ] - center)^2))
+})
+  predicted_B[i] <- which.min(distances)
+}
+
+table(predicted_B)
+```
+
+```{r}
+original_B <- clusters[-index_A]
+table(Original = original_B,
+      predicted = predicted_B)
+```
+
+```{r}
+aggregate(cereal_numeric, 
+          by = list(cluster = clusters),
+          FUN = mean)
+```
+
+```{r}
+cereal_nutrition <- cereal_numeric[, c(
+  "calories", "protein", "fat", "sodium",
+  "fiber", "carbo", "sugars", "potass",
+  "vitamins"
+)]
+cereal_nutrition_scaled <- scale(cereal_nutrition)
+```
+
+```{r}
+d_nutrition <- dist(cereal_nutrition_scaled, method = "euclidean")
+hc_nutrition <- agnes(d_nutrition, method = "ward")
+pltree(hc_nutrition, main = "Ward's Method - Healthy Cereals")
+```
+
+```{r}
+clusters_nutrition <- cutree(as.hclust(hc_nutrition), k =3)
+table(clusters_nutrition)
+
+aggregate(cereal_nutrition, 
+          by = list(cluster = clusters_nutrition),
+          FUN = mean)
+```
+
+```{r}
+data.frame(
+  name = cereals_clean$name,
+  cluster = clusters_nutrition
+  )
+```
+I would recommend cluster 1 because it has cereal with high protein and fiber and less calories and sugar
+
+
